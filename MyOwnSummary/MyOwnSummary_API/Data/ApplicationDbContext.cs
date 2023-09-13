@@ -16,11 +16,30 @@ namespace MyOwnSummary_API.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<User>().ToTable("User");
-            modelBuilder.Entity<Category>().ToTable("Category");
-            modelBuilder.Entity<UserLanguage>().ToTable("UserLanguage");
-            modelBuilder.Entity<Language>().ToTable("Language");
-            modelBuilder.Entity<Note>().ToTable("Note");
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("User");
+                entity.HasIndex(x => x.UserName).IsUnique();
+            });
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.ToTable("Category");
+                entity.HasIndex(x => x.Name).IsUnique();
+            });
+            modelBuilder.Entity<UserLanguage>(entity =>
+            {
+                entity.ToTable("UserLanguage");
+                entity.HasAlternateKey(x => new {x.UserId,x.LanguageId});
+            });
+            modelBuilder.Entity<Language>(entity =>
+            {
+                entity.ToTable("Language");
+                entity.HasIndex(x => x.Name).IsUnique();
+            });
+            modelBuilder.Entity<Note>(entity =>
+            {
+                entity.ToTable("Note");
+            });
         }
     }
 }
