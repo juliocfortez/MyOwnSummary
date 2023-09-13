@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MyOwnSummary_API.Data;
 using MyOwnSummary_API.Models;
 using MyOwnSummary_API.Models.Dtos.UserDtos;
+using MyOwnSummary_API.Repositories.IRepository;
 
 namespace MyOwnSummary_API.Controllers
 {
@@ -11,12 +12,12 @@ namespace MyOwnSummary_API.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<UserController> _logger;
         private readonly IMapper _mapper;
-        public UserController(ApplicationDbContext context, ILogger<UserController> logger, IMapper mapper)
+        public UserController(IUserRepository userRepository, ILogger<UserController> logger, IMapper mapper)
         {
-            _context = context;
+            _userRepository = userRepository;
             _logger = logger;
             _mapper = mapper;
         }
@@ -31,7 +32,7 @@ namespace MyOwnSummary_API.Controllers
                 _logger.LogError("El id por parametro no puede ser 0", id);
                 return BadRequest();
             }
-            var l = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
+            var l = await _userRepository.Get(x => x.Id == id);
             if (l == null)
             {
                 _logger.LogError("El id por parámetro no se encuentra en la BD", id);
@@ -45,7 +46,7 @@ namespace MyOwnSummary_API.Controllers
 
         public async Task<ActionResult<IEnumerable<UserDto>>> GetAll()
         {
-            return Ok(_mapper.Map<IEnumerable<UserDto>>(await _context.Users.ToListAsync()));
+            return Ok(_mapper.Map<IEnumerable<UserDto>>(await _userRepository.GetAll()));
         }
 
         [HttpDelete("{id:int}")]
@@ -60,14 +61,13 @@ namespace MyOwnSummary_API.Controllers
                 _logger.LogError("El id por parametro no puede ser 0", id);
                 return BadRequest();
             }
-            var l = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
+            var l = await _userRepository.Get(x => x.Id == id);
             if (l == null)
             {
                 _logger.LogError("El id por parámetro no se encuentra en la BD", id);
                 return NotFound();
             }
-            _context.Users.Remove(l);
-            await _context.SaveChangesAsync();
+            await _userRepository.Remove(l);
             return NoContent();
         }
 
@@ -77,14 +77,13 @@ namespace MyOwnSummary_API.Controllers
         public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserDto user)
         {
             if(!ModelState.IsValid) { return BadRequest(ModelState); }
-            if(await _context.Users.AnyAsync(x => x.UserName == user.UserName))
+            if(await _userRepository.Get(x => x.UserName == user.UserName) != null)
             {
                 ModelState.AddModelError("UserNameDuplicated","Este nombre de usuario ya existe");
                 return BadRequest(ModelState);
             }
             var u = _mapper.Map<User>(user);
-            await _context.Users.AddAsync(u);
-            await _context.SaveChangesAsync();
+            await _userRepository.Create(u);
             return CreatedAtRoute("GetUser", new {id = u.Id }, _mapper.Map<UserDto>(u));
         }
 
@@ -98,21 +97,20 @@ namespace MyOwnSummary_API.Controllers
                 return BadRequest("El id por parametro no coincide con el id de la entidad a editar");
             }
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            if (await _context.Users.AnyAsync(x => x.UserName == user.UserName))
+            if (await _userRepository.Get(x => x.UserName == user.UserName) != null)
             {
                 ModelState.AddModelError("UserNameDuplicated", "Este nombre de usuario ya existe");
                 return BadRequest(ModelState);
             }
 
-            var u = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var u = await _userRepository.Get(x => x.Id == id, false);
             if (u == null)
             {
                 _logger.LogError("El id por parámetro no se encuentra en la BD", id);
                 return NotFound();
             }
             u = _mapper.Map<User>(user);
-            _context.Users.Update(u);
-            await _context.SaveChangesAsync();
+            await _userRepository.Update(u);
             return NoContent();
         }
     }
