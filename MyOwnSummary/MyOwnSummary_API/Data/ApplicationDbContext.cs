@@ -20,11 +20,14 @@ namespace MyOwnSummary_API.Data
             {
                 entity.ToTable("User");
                 entity.HasIndex(x => x.UserName).IsUnique();
+                entity.Property(x=>x.UserName).IsRequired();
+                entity.Property(x => x.Password).IsRequired();
             });
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.ToTable("Category");
                 entity.HasIndex(x => x.Name).IsUnique();
+                entity.Property(x => x.Name).IsRequired();
             });
             modelBuilder.Entity<UserLanguage>(entity =>
             {
@@ -35,10 +38,12 @@ namespace MyOwnSummary_API.Data
             {
                 entity.ToTable("Language");
                 entity.HasIndex(x => x.Name).IsUnique();
+                entity.Property(x => x.Name).IsRequired();
             });
             modelBuilder.Entity<Note>(entity =>
             {
                 entity.ToTable("Note");
+                entity.Property(x => x.Description).IsRequired();
             });
         }
     }
