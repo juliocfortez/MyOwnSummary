@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using MyOwnSummary_API.Data;
 using MyOwnSummary_API.Models;
 using MyOwnSummary_API.Models.Dtos.UserDtos;
 using MyOwnSummary_API.Repositories.IRepository;
+using System.Net;
 
 namespace MyOwnSummary_API.Controllers
 {
@@ -15,103 +17,199 @@ namespace MyOwnSummary_API.Controllers
         private readonly IUserRepository _userRepository;
         private readonly ILogger<UserController> _logger;
         private readonly IMapper _mapper;
+        protected APIResponse _apiResponse;
         public UserController(IUserRepository userRepository, ILogger<UserController> logger, IMapper mapper)
         {
             _userRepository = userRepository;
             _logger = logger;
             _mapper = mapper;
+            _apiResponse = new();
         }
         [HttpGet("{id:int}", Name = "GetUser")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserDto))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<UserDto>> Get(int id)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIResponse))]
+        public async Task<ActionResult<APIResponse>> Get(int id)
         {
-            if (id == 0)
+            try
             {
-                _logger.LogError("El id por parametro no puede ser 0", id);
-                return BadRequest();
+                if (id == 0)
+                {
+                    _logger.LogError("El id por parametro no puede ser 0", id);
+                    _apiResponse.Errors.Add("El id no puede ser 0");
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_apiResponse);
+                }
+                var user = await _userRepository.Get(x => x.Id == id);
+                if (user == null)
+                {
+                    _logger.LogError($"El usuario con id {id} no existe", id);
+                    _apiResponse.Errors.Add($"El usuario con id {id} no existe");
+                    _apiResponse.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_apiResponse);
+                }
+                _apiResponse.Result = _mapper.Map<UserDto>(user);
+                _apiResponse.StatusCode = HttpStatusCode.OK;
+                _apiResponse.IsSuccess = true;
+                return Ok(_apiResponse);
             }
-            var l = await _userRepository.Get(x => x.Id == id);
-            if (l == null)
+            catch (Exception ex)
             {
-                _logger.LogError("El id por parámetro no se encuentra en la BD", id);
-                return NotFound();
+                _apiResponse.Errors.Add(ex.Message);
+                _apiResponse.IsSuccess = false;
             }
-
-            return Ok(_mapper.Map<UserDto>(l));
+            return _apiResponse;   
         }
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(APIResponse))]
 
-        public async Task<ActionResult<IEnumerable<UserDto>>> GetAll()
+        public async Task<ActionResult<APIResponse>> GetAll()
         {
-            return Ok(_mapper.Map<IEnumerable<UserDto>>(await _userRepository.GetAll()));
+            try
+            {
+                _apiResponse.Result = _mapper.Map<IEnumerable<UserDto>>(await _userRepository.GetAll());
+                _apiResponse.StatusCode = HttpStatusCode.OK;
+                _apiResponse.IsSuccess = true;
+            }
+            catch (Exception ex)
+            {
+                _apiResponse.Errors.Add(ex.Message);
+                _apiResponse.IsSuccess = false;
+            }
+
+            return _apiResponse;
         }
 
         [HttpDelete("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIResponse))]
 
         public async Task<IActionResult> Delete(int id)
         {
-            if (id == 0)
+            try
             {
-                _logger.LogError("El id por parametro no puede ser 0", id);
-                return BadRequest();
+                if (id == 0)
+                {
+                    _logger.LogError("El id por parametro no puede ser 0", id);
+                    _apiResponse.Errors.Add("El id no puede ser 0");
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_apiResponse);
+                }
+                var user = await _userRepository.Get(x => x.Id == id);
+                if (user == null)
+                {
+                    _logger.LogError($"El usuario con id {id} no existe", id);
+                    _apiResponse.Errors.Add($"El usuario con id {id} no existe");
+                    _apiResponse.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_apiResponse);
+                }
+                await _userRepository.Remove(user);
+                _apiResponse.StatusCode = HttpStatusCode.NoContent;
+                _apiResponse.IsSuccess = true;
+                return Ok(_apiResponse);
             }
-            var l = await _userRepository.Get(x => x.Id == id);
-            if (l == null)
+            catch(Exception ex) 
             {
-                _logger.LogError("El id por parámetro no se encuentra en la BD", id);
-                return NotFound();
+                _apiResponse.Errors.Add(ex.Message);
+                _apiResponse.IsSuccess = false;
             }
-            await _userRepository.Remove(l);
-            return NoContent();
+                return BadRequest(_apiResponse);
         }
 
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserDto user)
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIResponse))]
+        public async Task<ActionResult<APIResponse>> Create([FromBody] CreateUserDto user)
         {
-            if(!ModelState.IsValid) { return BadRequest(ModelState); }
-            if(await _userRepository.Get(x => x.UserName == user.UserName) != null)
+            try
             {
-                ModelState.AddModelError("UserNameDuplicated","Este nombre de usuario ya existe");
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    foreach(var item in ModelState.Values)
+                    {
+                        foreach (var error in item.Errors)
+                        {
+                            _apiResponse.Errors.Add(error.ErrorMessage);
+                        }
+                    }
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_apiResponse);
+                }
+                if (await _userRepository.Get(x => x.UserName == user.UserName) != null)
+                {
+                    _apiResponse.Errors.Add("Este nombre de usuario ya existe");
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_apiResponse);
+                }
+                var u = _mapper.Map<User>(user);
+                await _userRepository.Create(u);
+                _apiResponse.IsSuccess = true;
+                _apiResponse.StatusCode = HttpStatusCode.Created;
+                _apiResponse.Result = _mapper.Map<UserDto>(u);
+                return CreatedAtRoute("GetUser", new { id = u.Id }, _apiResponse);
             }
-            var u = _mapper.Map<User>(user);
-            await _userRepository.Create(u);
-            return CreatedAtRoute("GetUser", new {id = u.Id }, _mapper.Map<UserDto>(u));
+            catch (Exception ex)
+            {
+                _apiResponse.Errors.Add(ex.Message);
+                _apiResponse.IsSuccess = false;
+            }
+            return _apiResponse;
         }
 
         [HttpPut("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIResponse))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(APIResponse))]
         public async Task<IActionResult> Update([FromBody] UserDto user, int id)
         {
-            if(id != user.Id) {
-                _logger.LogError("El id por parametro no coincide con el id de la entidad a editar", id);
-                return BadRequest("El id por parametro no coincide con el id de la entidad a editar");
-            }
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            if (await _userRepository.Get(x => x.UserName == user.UserName) != null)
+            try
             {
-                ModelState.AddModelError("UserNameDuplicated", "Este nombre de usuario ya existe");
-                return BadRequest(ModelState);
-            }
+                if (id != user.Id)
+                {
+                    _logger.LogError("El id por parametro no coincide con el id de la entidad a editar", id);
+                    _apiResponse.StatusCode=HttpStatusCode.BadRequest;
+                    _apiResponse.Errors.Add("El id por parametro no coincide con el id de la entidad a editar");
+                    return BadRequest(_apiResponse);
+                }
+                if (!ModelState.IsValid) 
+                {
+                    foreach (var item in ModelState.Values)
+                    {
+                        foreach (var error in item.Errors)
+                        {
+                            _apiResponse.Errors.Add(error.ErrorMessage);
+                        }
+                    }
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_apiResponse);
+                }
+                if (await _userRepository.Get(x => x.UserName == user.UserName) != null)
+                {
+                    _apiResponse.Errors.Add("Este nombre de usuario ya existe");
+                    _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_apiResponse);
+                }
 
-            var u = await _userRepository.Get(x => x.Id == id, false);
-            if (u == null)
-            {
-                _logger.LogError("El id por parámetro no se encuentra en la BD", id);
-                return NotFound();
+                var u = await _userRepository.Get(x => x.Id == id, false);
+                if (u == null)
+                {
+                    _apiResponse.Errors.Add($"El usuario con id {id} no existe");
+                    _apiResponse.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_apiResponse);
+                }
+                u = _mapper.Map<User>(user);
+                await _userRepository.Update(u);
+                _apiResponse.StatusCode = HttpStatusCode.NoContent;
+                _apiResponse.IsSuccess = true;
+                return Ok(_apiResponse);
             }
-            u = _mapper.Map<User>(user);
-            await _userRepository.Update(u);
-            return NoContent();
+            catch (Exception ex)
+            {
+                _apiResponse.Errors.Add(ex.Message);
+                _apiResponse.IsSuccess = false;
+            }
+            return BadRequest(_apiResponse);
         }
     }
 }
