@@ -80,3 +80,4 @@ C:\Users\asus\repos\MyOwnSummary\MyOwnSummary\MyOwnSummary_API\obj\Debug\net7.0\
 C:\Users\asus\repos\MyOwnSummary\MyOwnSummary\MyOwnSummary_API\obj\Debug\net7.0\ref\MyOwnSummary_API.dll
 C:\Users\asus\repos\MyOwnSummary\MyOwnSummary\MyOwnSummary_API\bin\Debug\net7.0\AutoMapper.dll
 C:\Users\asus\repos\MyOwnSummary\MyOwnSummary\MyOwnSummary_API\bin\Debug\net7.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+C:\Users\asus\repos\MyOwnSummary\MyOwnSummary\MyOwnSummary_API\bin\Debug\net7.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

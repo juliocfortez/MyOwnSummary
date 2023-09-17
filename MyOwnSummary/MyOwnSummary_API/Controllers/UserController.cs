@@ -1,17 +1,17 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore;
-using MyOwnSummary_API.Data;
 using MyOwnSummary_API.Models;
 using MyOwnSummary_API.Models.Dtos.UserDtos;
 using MyOwnSummary_API.Repositories.IRepository;
 using System.Net;
+using System.Security.Claims;
 
 namespace MyOwnSummary_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
@@ -89,6 +89,20 @@ namespace MyOwnSummary_API.Controllers
         {
             try
             {
+                var identity = HttpContext.User.Identity as ClaimsIdentity;
+                if (!identity.Claims.Any())
+                {
+                    _apiResponse.Errors.Add("Token invalido");
+                    _apiResponse.StatusCode = HttpStatusCode.Unauthorized;
+                    return Unauthorized(_apiResponse);
+                }
+                var u = identity.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier).Value;
+                if(u != "User1")
+                {
+                    _apiResponse.Errors.Add("No tienes permisos para eliminar");
+                    _apiResponse.StatusCode = HttpStatusCode.Unauthorized;
+                    return Unauthorized(_apiResponse);
+                }
                 if (id == 0)
                 {
                     _logger.LogError("El id por parametro no puede ser 0", id);
