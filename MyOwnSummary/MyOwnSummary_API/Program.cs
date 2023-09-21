@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MyOwnSummary_API.Data;
+using MyOwnSummary_API.Models.Manager;
 using MyOwnSummary_API.Profiles;
 using MyOwnSummary_API.Repositories;
 using MyOwnSummary_API.Repositories.IRepository;
@@ -20,7 +22,7 @@ builder.Services.AddAuthentication(config =>
 {
     config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(config =>
+}).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme).AddJwtBearer(config =>
 {
     config.RequireHttpsMetadata = true;
     config.SaveToken = true;
@@ -32,6 +34,16 @@ builder.Services.AddAuthentication(config =>
         ValidateAudience = false
     };
 });
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromSeconds(1800);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
@@ -45,6 +57,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISessionManager, SessionManager>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepositoy>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 var app = builder.Build();
 
@@ -56,6 +73,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseSession();
 
 app.UseAuthentication();
 

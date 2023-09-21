@@ -11,6 +11,8 @@ namespace MyOwnSummary_API.Repositories.IRepository
 
         Task Remove(T entity);
 
+        bool Contains(T entity);
+
         Task Save(); 
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyOwnSummary_API.Data;
 
@@ -10,9 +11,11 @@ using MyOwnSummary_API.Data;
 namespace MyOwnSummaryAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230919102249_create_table_role")]
+    partial class createtablerole
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -204,7 +207,7 @@ namespace MyOwnSummaryAPI.Migrations
                     b.HasOne("MyOwnSummary_API.Models.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Role");
@@ -215,13 +218,13 @@ namespace MyOwnSummaryAPI.Migrations
                     b.HasOne("MyOwnSummary_API.Models.Language", "Language")
                         .WithMany("Users")
                         .HasForeignKey("LanguageId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MyOwnSummary_API.Models.User", "User")
                         .WithMany("Languages")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Language");
