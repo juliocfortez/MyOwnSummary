@@ -2,6 +2,7 @@
 using MyOwnSummary_API.Models;
 using MyOwnSummary_API.Models.Dtos.CategoryDtos;
 using MyOwnSummary_API.Models.Dtos.LanguageDtos;
+using MyOwnSummary_API.Models.Dtos.NoteDtos;
 using MyOwnSummary_API.Models.Dtos.RoleDtos;
 using MyOwnSummary_API.Models.Dtos.UserDtos;
 
@@ -19,6 +20,9 @@ namespace MyOwnSummary_API.Profiles
             CreateMap<CreateRoleDto, Role>();
             CreateMap<Language, LanguageDto>().ReverseMap();
             CreateMap<CreateLanguageDto, Language>();
+            CreateMap<Note, NoteDto>().ReverseMap();
+            CreateMap<CreateNoteDto, Note>();
+            CreateMap<UpdateNoteDto, Note>();
         }
     }
 }

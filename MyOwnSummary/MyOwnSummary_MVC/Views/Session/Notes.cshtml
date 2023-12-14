@@ -1,0 +1,33 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model MyOwnSummary_MVC.Models.ApiResponse;
+@{
+    ViewData["Title"] = "Notes";
+}
+<h1>Hello World</h1>
+@{
+    if (Model.StatusCode!=0)
+    {
+        if (Model.Errors.Any())
+        {
+            foreach (var error in Model.Errors)
+            {
+                <p>@error</p>
+                <br />
+            }
+        }
+        else
+        {
+            <p>@Model.Result</p>
+        }
+    }
+    else
+    {
+        <h1>!!Ops: Algo ha ido mal y no hemos podido capturar las notas</h1>
+    }
+
+}
+
+
+

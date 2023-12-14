@@ -123,7 +123,7 @@ namespace MyOwnSummary_API.Controllers
                 var language = await _languageRepository.Get(x => x.Id == id);
                 if (language == null)
                 {
-                    _apiResponse.Errors.Add($"El usuario con id {id} no existe");
+                    _apiResponse.Errors.Add($"El idioma con id {id} no existe");
                     _apiResponse.StatusCode = HttpStatusCode.NotFound;
                     return NotFound(_apiResponse);
                 }
