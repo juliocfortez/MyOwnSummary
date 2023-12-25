@@ -223,24 +223,25 @@ namespace MyOwnSummary_API.Controllers
                     _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest(_apiResponse);
                 }
-                if (await _userRepository.Get(x => x.UserName == user.UserName) != null)
+                var u = await _userRepository.Get(x => x.Id == id, false);
+                var uRepetido = await _userRepository.Get(x => x.UserName == user.UserName && x.Id != id);
+                if (uRepetido != null)
                 {
                     _apiResponse.Errors.Add("Este nombre de usuario ya existe");
                     _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest(_apiResponse);
                 }
-
-                var us = await _userRepository.Get(x => x.Id == id, false);
-                if (us == null)
+                if (u == null)
                 {
                     _apiResponse.Errors.Add($"El usuario con id {id} no existe");
                     _apiResponse.StatusCode = HttpStatusCode.NotFound;
                     return NotFound(_apiResponse);
                 }
-                us = _mapper.Map<User>(user);
-                await _userRepository.Update(us);
+                u = _mapper.Map<User>(user);
+                await _userRepository.Update(u);
                 _apiResponse.StatusCode = HttpStatusCode.NoContent;
                 _apiResponse.IsSuccess = true;
+                _apiResponse.Result = user;
                 return Ok(_apiResponse);
             }
             catch (Exception ex)
