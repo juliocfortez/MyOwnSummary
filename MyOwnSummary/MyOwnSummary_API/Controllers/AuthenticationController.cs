@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MyOwnSummary_API.Models;
 using MyOwnSummary_API.Models.Dtos.UserDtos;
@@ -23,7 +27,7 @@ namespace MyOwnSummary_API.Controllers
             _apiResponse = new();
         }
 
-        [HttpPost]
+        [HttpPost(Name = "Login")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(APIResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(APIResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIResponse))]
@@ -43,11 +47,11 @@ namespace MyOwnSummary_API.Controllers
                     _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest(_apiResponse);
                 }
-                if (await _userRepository.Get(x => x.Password == user.Password && x.UserName == user.UserName) != null)
+                var userDb = await _userRepository.Get(x => x.Password == user.Password && x.UserName == user.UserName);
+                if (userDb != null)
                 {
                     var keyBytes = Encoding.ASCII.GetBytes(secretKey);
-                    var claims = new ClaimsIdentity();
-                    claims.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.UserName));
+                    var claims = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.UserName), new Claim("Id",userDb.Id.ToString()) }, CookieAuthenticationDefaults.AuthenticationScheme); ;
                     var token = new SecurityTokenDescriptor
                     {
                         Subject = claims,
@@ -56,6 +60,9 @@ namespace MyOwnSummary_API.Controllers
                     };
                     var tokenHandler = new JwtSecurityTokenHandler();
                     var tokenConfig = tokenHandler.CreateToken(token);
+                    var prnicipal = new ClaimsPrincipal(claims);
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, prnicipal);
+                    HttpContext.Session.SetString(userDb.UserName+userDb.Id, user.UserName);
                     _apiResponse.Result = tokenHandler.WriteToken(tokenConfig);
                     _apiResponse.StatusCode = HttpStatusCode.OK;
                     _apiResponse.IsSuccess = true;
@@ -76,6 +83,17 @@ namespace MyOwnSummary_API.Controllers
             }
             return BadRequest(_apiResponse);
             
+        }
+        [HttpPost]
+        [Route("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            if (!identity.Claims.Any()) return BadRequest("Token invalido o expirado");
+            var key = identity.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier).Value + identity.Claims.FirstOrDefault(x => x.Type == "Id").Value;
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if(HttpContext.Session.Keys.Any(x => x == key)) HttpContext.Session.Remove(key);
+            return Ok("Session closed");
         }
     }
 }

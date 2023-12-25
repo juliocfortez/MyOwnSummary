@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.EntityFrameworkCore;
 using MyOwnSummary_API.Data;
 using MyOwnSummary_API.Repositories.IRepository;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace MyOwnSummary_API.Repositories
@@ -28,9 +31,9 @@ namespace MyOwnSummary_API.Repositories
             if(!tracked) query = dbSet.AsNoTracking();
             if(filter != null) query = query.Where(filter);
             return await query.FirstOrDefaultAsync();
-
         }
 
+        
         public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter = null)
         {
             IQueryable<T> query = dbSet;
@@ -42,6 +45,11 @@ namespace MyOwnSummary_API.Repositories
         {
             dbSet.Remove(entity);
             await Save();
+        }
+
+        public bool Contains(T entity)
+        {
+            return dbSet.Contains(entity);
         }
 
         public async Task Save()

@@ -23,9 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\Dtos\CategoryDtos\" />
     <Folder Include="Models\Dtos\UserLanguageDtos\" />
-    <Folder Include="Models\Dtos\NoteDtos\" />
   </ItemGroup>
 
 </Project>

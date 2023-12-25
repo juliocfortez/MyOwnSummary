@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MyOwnSummary_API.Models.Dtos.LanguageDtos
+namespace MyOwnSummary_API.Models.Dtos.RoleDtos
 {
-    public class LanguageDto
+    public class RoleDto
     {
         [Required]
         public int Id { get; set; }

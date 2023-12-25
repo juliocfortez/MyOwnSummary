@@ -2,10 +2,8 @@
 
 namespace MyOwnSummary_API.Models.Dtos.LanguageDtos
 {
-    public class LanguageDto
+    public class CreateLanguageDto
     {
-        [Required]
-        public int Id { get; set; }
         [Required]
         public string Name { get; set; }
     }
